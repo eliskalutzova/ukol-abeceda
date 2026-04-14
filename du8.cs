@@ -1,30 +1,13 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;                
 
 namespace abeceda
 {
     class Program
     {
-        // static (char[,], string, int, int) NactiVstup()
-        // {
-        //     int sirka = int.Parse(Console.ReadLine());
-        //     int vyska = int.Parse(Console.ReadLine());
-        //     string obsahTabulky = Console.ReadLine();
-        //     string text = Console.ReadLine().Trim();
-        //     char[,] tabulka = new char [vyska, sirka];
-        //     int k = 0;
-        //     for (int i = 0; i < vyska; i++)
-        //     {
-        //          for (int j = 0; j < sirka; j++)
-        //         {
-        //             tabulka[i,j] = obsahTabulky[k];
-        //             k++;
-        //         }
-        //     }
-        //     return (tabulka, text, sirka, vyska);
-        // }
-
         static string[] NactiPoleStringu()
         {
             ProcessStartInfo start = new ProcessStartInfo();
@@ -75,96 +58,41 @@ namespace abeceda
             return poleTabulek;
         }
 
-
-
-        static void Vyresetuj2DPole(int[,] pole, int vyska, int sirka, int hodnota)
+        static int Vyres(char[,] tabulka, int vyska, int sirka, string text)
         {
+            var poziceZnaku = new Dictionary<char, List<(int r, int s)>>();
             for (int i = 0; i < vyska; i++)
             {
                 for (int j = 0; j < sirka; j++)
                 {
-                    pole[i, j] = hodnota;
+                    char znak = tabulka[i, j];
+                    if (!poziceZnaku.ContainsKey(znak))
+                        poziceZnaku[znak] = new List<(int r, int s)>();
+                    poziceZnaku[znak].Add((i, j));
                 }
             }
-        }
 
-        static List<(int r, int s, int pocetK)> ZiskejInformaceAktualnichZnaku(Queue<(int r, int s, int pocetK)> fronta, char[,] tabulka, int sirka, int vyska, char cil, int[,] vzdalenosti)
-        {
-            (int r, int s)[] smery = [(-1, 0), (1, 0), (0, 1), (0, -1)];
-            while (fronta.Count > 0)
+            var stavy = new Dictionary<(int r, int s), int>();
+            stavy[(0, 0)] = 0;
+
+            foreach (char cil in text)
             {
-                var (aktualniR, aktualniS, pocetK) = fronta.Dequeue();
-                foreach (var (smerR, smerS) in smery)
-                {
-                    int nR = aktualniR + smerR;
-                    int nS = aktualniS + smerS;
+                var noveStavy = new Dictionary<(int r, int s), int>();
+                var cilovePozice = poziceZnaku[cil];
 
-                    if (nR >= 0 && nR < vyska && nS >= 0 && nS < sirka && pocetK + 1 < vzdalenosti[nR, nS])
-                    {
-                        fronta.Enqueue((nR, nS, pocetK + 1));
-                        vzdalenosti[nR, nS] = pocetK + 1;
-                    }
-                }
-            } 
-
-            List<(int r, int s, int pocetK)> informaceAktualnichZnaku = [];
-            for (int i = 0; i < vyska; i++)
-            {
-                for (int j = 0; j < sirka; j++)
+                foreach (var cilPozice in cilovePozice)
                 {
-                    if (tabulka[i, j] == cil && vzdalenosti[i, j] != int.MaxValue)
+                    int minVzdalenost = int.MaxValue;
+                    foreach (var start in stavy)
                     {
-                        informaceAktualnichZnaku.Add((i, j, vzdalenosti[i, j] + 1));
+                        int dist = Math.Abs(start.Key.r - cilPozice.r) + Math.Abs(start.Key.s - cilPozice.s) + 1;
+                        minVzdalenost = Math.Min(minVzdalenost, start.Value + dist);
                     }
+                    noveStavy[cilPozice] = minVzdalenost;
                 }
+                stavy = noveStavy;
             }
-            return informaceAktualnichZnaku;
-        }
-
-        static int Vyres(char[,] tabulka, int sirka, int vyska, string text)
-        {
-            int[,] vzdalenosti = new int[vyska, sirka];
-            Vyresetuj2DPole(vzdalenosti, vyska, sirka, int.MaxValue);
-            vzdalenosti[0, 0] = 0;
-
-            int idx = 0;
-            char cil = text[idx];
-            int posledni_idx = text.Length - 1;
-
-            Queue<(int r, int s, int pocetK)> fronta = new();
-            fronta.Enqueue((0, 0, 0));
-            List<(int r, int s, int pocetK)> informaceAktualnichZnaku = [(0, 0, 0)];
-            int vysledek = int.MaxValue;
-
-            while (fronta.Count > 0)
-            {
-                List<(int r, int s, int pocetK)> noveInformaceAktualnichZnaku = ZiskejInformaceAktualnichZnaku(fronta, tabulka, sirka, vyska, cil, vzdalenosti);
-                if (noveInformaceAktualnichZnaku.Count != 0)
-                {
-                    informaceAktualnichZnaku = noveInformaceAktualnichZnaku;
-                }
-
-                if (idx == posledni_idx)
-                {
-                    foreach (var znak in informaceAktualnichZnaku)
-                    {
-                        if (znak.pocetK < vysledek)
-                        {
-                            vysledek = znak.pocetK;
-                        }
-                    }
-                    return vysledek;
-                }
-                idx++;
-                cil = text[idx];
-                Vyresetuj2DPole(vzdalenosti, vyska, sirka, int.MaxValue);
-                //pridej vsechny aktualni startovni znaky do fronty a do vzdalenosti
-                foreach (var (r, s, pocetK) in informaceAktualnichZnaku)
-                {
-                    fronta.Enqueue((r, s, pocetK));
-                    vzdalenosti[r, s] = pocetK;
-                }
-            }
+            int vysledek = stavy.Values.Min();
             return vysledek;
         }
 
