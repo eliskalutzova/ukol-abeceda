@@ -2,7 +2,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;                
+using System.Linq;
+using System.Text;
 
 namespace abeceda
 {
@@ -33,6 +34,21 @@ namespace abeceda
             return poleStringu;
         }
 
+        static char[,] PrevedStringNaTabulku(string stringTabulka, int vyska, int sirka)
+        {
+            char[,] tabulka = new char [vyska, sirka];
+            int k = 0;
+            for (int i = 0; i < vyska; i++)
+            {
+                for (int j = 0; j < sirka; j++)
+                {
+                    tabulka[i,j] = stringTabulka[k];
+                    k++;
+                }
+            }
+            return tabulka;
+        }
+
         static char[][,] VytvorPoleTabulek(int vyska, int sirka, int pocetTabulek) 
         {
             string[] poleStringu = NactiPoleStringu();
@@ -41,21 +57,25 @@ namespace abeceda
             int m = 0;
             foreach (string stringTabulka in poleStringu)
             {
-                char[,] tabulka = new char [vyska, sirka];
-                int k = 0;
-                for (int i = 0; i < vyska; i++)
-                {
-                    for (int j = 0; j < sirka; j++)
-                    {
-                        tabulka[i,j] = stringTabulka[k];
-                        k++;
-                    }
-                }
+                var tabulka = PrevedStringNaTabulku(stringTabulka, vyska, sirka);
                 poleTabulek[m] = tabulka;
                 m++;
                 if (m >= pocetTabulek) break;
             }
             return poleTabulek;
+        }
+
+        static string PrevedTabulkuNaString(char[,] tabulka, int vyska, int sirka)
+        {
+            var sb = new StringBuilder(vyska * sirka);
+            for (int i = 0; i < vyska; i++)
+            {
+                for (int j = 0; j < sirka; j++)
+                {
+                    sb.Append(tabulka[i, j]);
+                }
+            }
+            return sb.ToString();
         }
 
         static int Vyres(char[,] tabulka, int vyska, int sirka, string text)
@@ -77,6 +97,7 @@ namespace abeceda
 
             foreach (char cil in text)
             {
+                if (!poziceZnaku.ContainsKey(cil)) continue;
                 var noveStavy = new Dictionary<(int r, int s), int>();
                 var cilovePozice = poziceZnaku[cil];
 
@@ -102,15 +123,33 @@ namespace abeceda
             var poleTabulek = VytvorPoleTabulek(vyska, sirka, pocetTabulek);
             string text = File.ReadAllText("du8-text.txt").Trim();
             int vysledek = int.MaxValue;
+            char [,] nejlepsiTabulka = new char [vyska, sirka];
 
             foreach (char[,] tabulka in poleTabulek)
             {
                 int novyVysledek = Vyres(tabulka, vyska, sirka, text);
                 if (novyVysledek < vysledek)
+                {
                     vysledek = novyVysledek;
+                    nejlepsiTabulka = tabulka;
+                }
             }
+            string nejlepsiTabulkaString = PrevedTabulkuNaString(nejlepsiTabulka, vyska, sirka);
 
-            Console.WriteLine(vysledek); 
+            Console.WriteLine(" "); 
+            for (int i = 0; i < vyska; i++)
+            {
+                for (int j = 0; j < sirka; j++)
+                {
+                    Console.Write($"{nejlepsiTabulka[i, j], 2}");
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine(" "); 
+            Console.WriteLine($"Počet stisků: {vysledek}"); 
+            Console.WriteLine(" "); 
+            Console.WriteLine($"Tabulka jako string: \"{nejlepsiTabulkaString}\""); 
+            Console.WriteLine(" "); 
         }
     }
 }
