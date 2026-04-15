@@ -7,3 +7,6 @@ soubor [unikatni-znaky.cs](./unikatni-znaky.cs) zjistí unikátní znaky v textu
 
 ### Issue #2
 * zlepšit způsob generování tabulek - lepší rozvržení, abychom se dostali pod 80k (teď je to cca 83)
+
+jeste vlastne zkusim zmenit ty parametry, to jsem zapomnela ze muzu
+a kdyby i to nefungovalo, tak klidne jeste pomuzu s vylepsenim toho generovani
